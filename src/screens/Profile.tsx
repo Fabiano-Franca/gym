@@ -1,16 +1,62 @@
-import { Center, ScrollView, VStack, Skeleton, Text, Heading } from "native-base";
-
-import { UserPhoto } from "@components/UserPhoto";
-import { ScreenHeader } from "@components/ScreenHeader";
 import { useState } from "react";
-import { TouchableOpacity } from "react-native";
+import { Alert, TouchableOpacity } from "react-native";
+import { Center, ScrollView, VStack, Skeleton, Text, Heading, useToast } from "native-base";
+import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
+
 import { Input } from "@components/Input";
 import { Button } from "@components/Button";
+import { UserPhoto } from "@components/UserPhoto";
+import { ScreenHeader } from "@components/ScreenHeader";
 
 const PHOTO_SIZE = 33;
 
 export function Profile() {
     const [photoIsLoading, setIsLoading] = useState(false);
+    const [userPhoto, setUserPhoto] = useState('https://github.com/fabiano-franca.png')
+
+    //Inicializa o toast
+    const toast = useToast();
+
+    async function handleUserPhotoSelect() {
+        setIsLoading(true);
+        try {
+            //Abre a galeria de imagens
+            const photoSelected = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                quality: 1,
+                aspect: [4,4],
+                allowsEditing: true,
+            });
+    
+            //console.log(photoSelected);
+    
+            if(photoSelected.canceled){
+                return;
+            }
+
+            if(photoSelected.assets[0].uri){
+                const { photoInfo }: any = await FileSystem.getInfoAsync(photoSelected.assets[0].uri);
+                //console.log(photoInfo);
+                //console.log((photoInfo.size / 1024 /1024));
+                
+                if(photoInfo.size && (photoInfo.size / 1024 /1024) > 5){
+                    return toast.show({
+                        title: 'Essa imagem é muito grande. Escolha uma de até 3MB.',
+                        placement: 'top',
+                        bgColor: 'red.500'
+                    });
+                }
+
+                setUserPhoto(photoSelected.assets[0].uri);
+            }
+    
+        } catch (error) {
+            
+        } finally {
+            setIsLoading(false);
+        }
+    }
 
     return (
         <VStack flex={1}>
@@ -30,12 +76,12 @@ export function Profile() {
 
                         :
                         <UserPhoto 
-                            source={{ uri: 'https://github.com/fabiano-franca.png'}}
+                            source={{ uri: userPhoto}}
                             alt="Foto do usuário"
                             size={PHOTO_SIZE}
                         />
                     }
-                    <TouchableOpacity>
+                    <TouchableOpacity onPress={handleUserPhotoSelect}>
                         <Text color={"green.500"} fontWeight={"bold"} fontSize={"md"} mt={2} mb={8}>
                             Alterar foto
                         </Text>
