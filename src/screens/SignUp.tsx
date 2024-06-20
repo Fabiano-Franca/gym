@@ -1,6 +1,8 @@
 import { useForm, Controller } from 'react-hook-form';
 import { useNavigation } from "@react-navigation/native";
 import { Center, Image, VStack, Text, Heading, ScrollView } from "native-base";
+import * as yup from "yup";
+import { yupResolver } from '@hookform/resolvers/yup';
 
 import LogoSvg from '@assets/logo.svg';
 import BackgroundImg from '@assets/background.png';
@@ -15,12 +17,20 @@ type FormDataProps = {
     password_confirm: string;
 }
 
+const signUpSchema = yup.object().shape({
+    name: yup.string().required('Informe o nome.'),
+    email: yup.string().required('Informe o e-mail.'),
+    password: yup.string().required('Informe a senha.').min(6, 'A senha deve ter pelo menos 6 dígitos.'),
+    password_confirm: yup.string().required('Confirme a senha.').oneOf([yup.ref('password')], 'A confirmação da senha não confere.')
+});
+
 export function SignUp(){
  
-    const { control, handleSubmit } = useForm<FormDataProps>();
+    const { control, handleSubmit, formState: { errors } } = useForm<FormDataProps>({
+        resolver: yupResolver(signUpSchema)
+    });
 
     const navigation = useNavigation();
-
 
     function handleSignUp({ name, email, password, password_confirm }: FormDataProps){
         console.log(name, email, password, password_confirm);
@@ -62,6 +72,7 @@ export function SignUp(){
                                 placeholder="Nome"
                                 onChangeText={onChange}
                                 value={value}
+                                errorMessage={errors.name?.message}
                             />
                         )}
                     />
@@ -74,12 +85,13 @@ export function SignUp(){
                                 placeholder="E-mail"
                                 keyboardType="email-address"
                                 autoCapitalize="none"
-                                onChange={onChange}
+                                onChangeText={onChange}
                                 value={value}
+                                errorMessage={errors.email?.message}
                             />
                         )}
                     />
-
+                    
                     <Controller 
                         control={control}
                         name='password'
@@ -87,8 +99,9 @@ export function SignUp(){
                             <Input 
                                 placeholder="Senha"
                                 secureTextEntry
-                                onChange={onChange}
+                                onChangeText={onChange}
                                 value={value}
+                                errorMessage={errors.password?.message}
                             />
                         )}
                     />
@@ -100,8 +113,9 @@ export function SignUp(){
                             <Input 
                                 placeholder="Confirme senha"
                                 secureTextEntry
-                                onChange={onChange}
+                                onChangeText={onChange}
                                 value={value}
+                                errorMessage={errors.password_confirm?.message}
                             />
                         )}
                     />
@@ -117,7 +131,7 @@ export function SignUp(){
                 <Button 
                     title="voltar para o login" 
                     variant="outline" 
-                    mt={24}
+                    mt={16}
                     onPress={handleGoBack}
                 />
             </VStack>

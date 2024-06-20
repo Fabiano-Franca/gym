@@ -17,7 +17,7 @@ export function HomeHeader() {
                     Olá,
                 </Text>
 
-                <Heading color="gray.100">
+                <Heading color="gray.100" fontSize={"md"} fontFamily={"heading"}>
                     Fabiano
                 </Heading>
             </VStack>
