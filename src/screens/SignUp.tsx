@@ -1,6 +1,6 @@
 import { useForm, Controller } from 'react-hook-form';
 import { useNavigation } from "@react-navigation/native";
-import { Center, Image, VStack, Text, Heading, ScrollView } from "native-base";
+import { Center, Image, VStack, Text, Heading, ScrollView , useToast} from "native-base";
 import * as yup from "yup";
 import { yupResolver } from '@hookform/resolvers/yup';
 
@@ -9,6 +9,10 @@ import BackgroundImg from '@assets/background.png';
 
 import { Input } from "@components/Input";
 import { Button } from "@components/Button";
+import { api } from '@services/api';
+import { AppError } from '@utils/AppError';
+import { useState } from 'react';
+import { useAuth } from '@hooks/useAuth';
 
 type FormDataProps = {
     name: string;
@@ -25,20 +29,43 @@ const signUpSchema = yup.object().shape({
 });
 
 export function SignUp(){
- 
+    const toast = useToast();
+    const [isLoading, setIsLoading] = useState(false);
+    const { signIn } = useAuth();
+
     const { control, handleSubmit, formState: { errors } } = useForm<FormDataProps>({
         resolver: yupResolver(signUpSchema)
     });
 
     const navigation = useNavigation();
-
-    function handleSignUp({ name, email, password, password_confirm }: FormDataProps){
-        console.log(name, email, password, password_confirm);
-    }
-
+    
     function handleGoBack() {
         navigation.goBack();
     }
+
+    async function handleSignUp({ name, email, password, password_confirm }: FormDataProps){
+        try {
+            
+            setIsLoading(true);
+
+            const response = await api.post('/users', { name, email, password });
+            await signIn(email, password);
+
+          } catch (error) {
+
+            setIsLoading(false);
+
+            const isAppError = error instanceof AppError;
+            const title = isAppError ? error.message : 'Não foi possível criar a conta. tente novamente mais tarde.';
+        
+            toast.show({
+              title,
+              placement: 'top',
+              bgColor: 'red.500'
+            });
+          }
+    }
+
 
     return(
         <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
@@ -124,6 +151,7 @@ export function SignUp(){
                     <Button 
                         title="Criar e Acessar" 
                         onPress={handleSubmit(handleSignUp)}
+                        isLoading={isLoading}
                     />
 
                 </Center>
@@ -137,4 +165,8 @@ export function SignUp(){
             </VStack>
         </ScrollView>
     );
+}
+
+function setIsLoading(arg0: boolean) {
+    throw new Error('Function not implemented.');
 }
